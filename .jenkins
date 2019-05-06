@@ -1,0 +1,32 @@
+def getTagName() {
+	return "${env.BRANCH_NAME}".replace('/', '-')
+}
+
+
+pipeline {
+
+	agent any
+
+	environment {
+		IMAGE = 'vaporio/tftp-server'
+		TAG = getTagName()
+	}
+
+	stages {
+		stage('Build') {
+			when {
+                branch 'master'
+			}
+
+			steps {
+				sh '''
+					docker build . \
+					-t ${IMAGE}:${TAG} \
+				'''
+				withDockerRegistry(registry: [credentialsId: 'vio-docker-hub']) {
+					sh "docker push ${env.IMAGE}:${env.TAG}"
+				}
+			}
+		}
+	}
+}
