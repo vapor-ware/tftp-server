@@ -1,32 +1,13 @@
-def getTagName() {
-	return "${env.BRANCH_NAME}".replace('/', '-')
-}
+#!/usr/bin/env groovy
 
+// Include this shared CI repository to load script helpers and libraries.
+library identifier: 'vapor@1.0.0-RC12', retriever: modernSCM([
+    $class: 'GitSCMSource',
+    remote: 'https://github.com/vapor-ware/ci-shared.git',
+    credentialsId: 'vio-bot-gh',
+])
 
-pipeline {
+dockerBuildPipeline([
+    'image': 'vaporio/tftp-server',
+])
 
-	agent any
-
-	environment {
-		IMAGE = 'vaporio/tftp-server'
-		TAG = getTagName()
-	}
-
-	stages {
-		stage('Build') {
-			when {
-                branch 'master'
-			}
-
-			steps {
-				sh '''
-					docker build . \
-					-t ${IMAGE}:${TAG} \
-				'''
-				withDockerRegistry(registry: [credentialsId: 'vio-docker-hub']) {
-					sh "docker push ${env.IMAGE}:${env.TAG}"
-				}
-			}
-		}
-	}
-}
